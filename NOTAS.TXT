@@ -1,0 +1,8 @@
+generative-ai-app/
+├── backend/
+│   ├── server.js
+│   └── .env
+├── frontend/
+│   └── index.html
+│   └── style.css
+└── package.json

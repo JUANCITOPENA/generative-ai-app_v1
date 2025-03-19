@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Google Generative AI Studio - Backend</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <h1>Google Generative AI Studio - Backend</h1>
+    <div class="prompt-section">
+      <textarea class="prompt-area" id="promptInput" placeholder="Escribe tu consulta aquí..."></textarea>
+      <div class="button-group">
+        <button id="executeBtn">Ejecutar</button>
+        <button id="clearBtn">Limpiar</button>
+      </div>
+    </div>
+    <div class="result-container">
+      <h3>Resultados:</h3>
+      <div id="resultBox" class="result-box"></div>
+    </div>
+  </div>
+  <div class="loading" id="loading" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+
+
+  <script>
+    document.getElementById('executeBtn').addEventListener('click', executeQuery);
+    document.getElementById('clearBtn').addEventListener('click', clearPrompt);
+
+    async function executeQuery() {
+      const prompt = document.getElementById('promptInput').value;
+      const resultBox = document.getElementById('resultBox');
+
+      if (!prompt.trim()) return alert('Por favor ingresa una consulta');
+
+      try {
+        showLoading();
+        const response = await fetch('/api/generate', { // URL relativa - funcionará en Vercel
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: prompt })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          hideLoading();
+          return alert(`Error: ${errorData.error || 'Error al comunicarse con el servidor.'}`);
+        }
+
+        const data = await response.json();
+        hideLoading();
+
+        if (data.candidates && data.candidates.length > 0) {
+          displayResult(data.candidates[0].content.parts[0]);
+        } else {
+          resultBox.innerHTML = 'No se recibió respuesta del modelo';
+        }
+      } catch (error) {
+        hideLoading();
+        resultBox.innerHTML = `Error: ${error.message || 'Error de red.'}`;
+      }
+    }
+
+    function displayResult(content) {
+      const resultBox = document.getElementById('resultBox');
+      resultBox.innerHTML = '';
+
+      if (content.inline_data) {
+        const mimeType = content.inline_data.mime_type;
+        const data = content.inline_data.data;
+
+        if (mimeType.startsWith('image/')) {
+          const imageUrl = `data:<span class="math-inline">\{mimeType\};base64,</span>{data}`;
+          resultBox.innerHTML = `<div class="image-container"><img src="${imageUrl}"></div>`;
+        } else if (mimeType === 'text/html') {
+          resultBox.innerHTML = marked.parse(atob(data));
+          Prism.highlightAll();
+        }
+      } else if (content.text) {
+        resultBox.innerHTML = marked.parse(content.text);
+        Prism.highlightAll();
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('loading').style.display = 'flex';
+    }
+
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
+
+    function clearPrompt() {
+      document.getElementById('promptInput').value = '';
+      document.getElementById('resultBox').innerHTML = '';
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,19 @@
+{
+  "name": "generative-ai-app_v1",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "node api/generate.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.8.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
